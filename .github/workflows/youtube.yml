@@ -1,0 +1,45 @@
+name: YouTube agent 
+on:
+  schedule:
+    - cron: "30 13 * * *"   # Daily 7 PM IST
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install gtts moviepy
+
+      - name: Generate script
+        run: |
+          echo "क्या आप जानते हैं? दुनिया का सबसे रहस्यमयी तथ्य आज भी वैज्ञानिकों को हैरान करता है।" > script.txt
+
+      - name: Generate voice
+        run: |
+          python - <<EOF
+          from gtts import gTTS
+          text=open("script.txt").read()
+          tts=gTTS(text=text, lang='hi')
+          tts.save("voice.mp3")
+          EOF
+
+      - name: Create video
+        run: |
+          python - <<EOF
+          from moviepy.editor import *
+          audio = AudioFileClip("voice.mp3")
+          clip = ColorClip(size=(1080,1920), color=(0,0,0), duration=audio.duration)
+          clip = clip.set_audio(audio)
+          clip.write_videofile("video.mp4", fps=24)
+          EOF
